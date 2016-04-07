@@ -91,6 +91,8 @@ Rectangle {
     {
         if(index == -1)
             return
+        else if(index == 0)
+            index = 1
 
         for(var i = 0; i < tumblerModel.count; i++)
         {
