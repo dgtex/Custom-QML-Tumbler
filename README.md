@@ -11,9 +11,15 @@ It's pretty easy to use. Just copy qml in your project and create component with
 # Properties
 
 minValue // Sets minimum integer value
+
 maxValue // Sets maximum integer vlaue
+
 stepSize // By how much value is incrased in each step
+
 value // Current value
+
 width // Width of control
+
 height // Height of control
+
 
