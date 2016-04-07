@@ -93,6 +93,8 @@ Rectangle {
             return
         else if(index == 0)
             index = 1
+        else if(index == tumblerModel.count - 1)
+            index = tumblerModel.count-2
 
         for(var i = 0; i < tumblerModel.count; i++)
         {
