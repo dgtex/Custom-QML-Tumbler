@@ -30,6 +30,26 @@ Rectangle {
         setActive(findItemIndex(root.value), true)
     }
 
+    onSuffixChanged: {
+        reloadModel()
+    }
+
+    onTextSizeChanged: {
+        reloadModel()
+    }
+
+    onTextColorChanged: {
+        reloadModel()
+    }
+
+    onIndicatorColorChanged: {
+        reloadModel()
+    }
+
+    onIndicatorSizeChanged: {
+        reloadModel()
+    }
+
     function findItemIndex(val)
     {
         for(var i = 0; i < tumblerModel.length; i++)
