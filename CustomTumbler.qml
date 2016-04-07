@@ -2,59 +2,85 @@ import QtQuick 2.3
 
 Rectangle {
     id: root
-    height: 160
-    width: 160
+    height: 200
+    width: 200
     gradient: Gradient {
         GradientStop { position: 0.0; color: "#CCCCDD" }
         GradientStop { position: 1.0; color: "#9999AA" }
     }
-    radius: 20
 
-    property int minValue: 0
-    property int maxValue: 100
-    property int stepSize: 5
-    property int value: 90
+    property var values: [0, 1, 2, 3, 4, 5]
+    property var value: 0
+    property string suffix: ""
+    property int itemHeight: 60
+    property int textSize: 30
+    property string textColor: "#000000"
+    property string indicatorColor: "#FFFF66"
+    property int indicatorSize: 5
 
     Component.onCompleted: {
         reloadModel()
     }
 
-    onMinValueChanged: {
-        reloadModel()
-    }
-
-    onMaxValueChanged: {
-        reloadModel()
-    }
-
-    onStepSizeChanged: {
+    onValuesChanged: {
         reloadModel()
     }
 
     onValueChanged: {
-        setActive(root.value / root.stepSize, true)
+        setActive(findItemIndex(root.value), true)
+    }
+
+    function findItemIndex(val)
+    {
+        for(var i = 0; i < tumblerModel.length; i++)
+        {
+            if(tumblerModel.get(i).val == val && tumblerModel.get(i).hide == false)
+                return i
+        }
+
+        return -1
     }
 
     function reloadModel()
     {
+        var scrollToIndex = 0
+
         tumblerModel.clear()
-        tumblerModel.append({"val":""})
-        for(var i = minValue; i < maxValue - minValue; i+= stepSize)
+
+        tumblerModel.append({"val":null,"active":false,"hide":true})
+
+        for(var i = 0; i < values.length; i++)
         {
-            tumblerModel.append({"val":i.toString()})
+            if(root.value == root.values[i])
+            {
+                tumblerModel.append({"val":root.values[i],"active":true,"hide":false})
+                scrollToIndex = i
+            }
+            else
+            {
+                tumblerModel.append({"val":root.values[i],"active":false,"hide":false})
+            }
         }
-        tumblerModel.append({"val":"", "active":false})
-        setActive(root.value / root.stepSize, true)
+
+        tumblerModel.append({"val":null,"active":false,"hide":true})
+
+        tumblerMain.positionViewAtIndex(scrollToIndex, ListView.Center)
     }
 
     function setActive(index, reposition)
     {
+        if(index == -1)
+            return
+
         for(var i = 0; i < tumblerModel.count; i++)
         {
             tumblerModel.setProperty(i, "active", false)
         }
+
         tumblerModel.setProperty(index, "active", true)
-        root.value = index * stepSize
+
+        root.value = root.values[index]
+
         if(reposition)
             tumblerMain.positionViewAtIndex(index, ListView.Center)
     }
@@ -69,13 +95,14 @@ Rectangle {
         Rectangle {
             anchors.left: parent.left
             anchors.right: parent.right
-            height: 50
+            height: root.itemHeight + (hide ? (root.height / 2 - root.itemHeight - root.itemHeight / 2) : 0)
             color: "transparent"
+            visible: !hide
 
             Text {
-                text: val
-                color: "black"
-                font.pointSize: 30
+                text: val + suffix
+                color: root.textColor
+                font.pointSize: root.textSize
                 anchors.centerIn: parent
                 opacity: active ? 1 : 0.3
             }
@@ -83,110 +110,52 @@ Rectangle {
     }
 
     Rectangle {
-        id: indicator
+        id: indicatorTop
         anchors.left: parent.left
         anchors.right: parent.right
-        height: 60
-        color: "transparent"
+        height: root.indicatorSize
         anchors.verticalCenter: parent.verticalCenter
-        border.width: 5
-        border.color: "#FFFF66"
-        radius: 10
+        anchors.verticalCenterOffset: -(root.itemHeight / 2)
+        color: root.indicatorColor
+    }
+
+    Rectangle {
+        id: indicatorBottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: root.indicatorSize
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.verticalCenterOffset: root.itemHeight / 2
+        color: root.indicatorColor
     }
 
     ListView {
         id: tumblerMain
         model: tumblerModel
         delegate: tumblerDelegate
-        spacing: 10
         anchors.fill: parent
         clip: true
         onFlickEnded: {
-            if(indexAt(0, contentY + 25) == -1)
-            {
-                var topPixels = 0
-                var bottomPixels = 0
-                var topY = contentY + 25
-                var bottomY = contentY + 25
-
-                while(indexAt(0, topY) == -1)
-                {
-                    topPixels++
-                    topY--
-
-                    if(topPixels > 1000)
-                        break;
-                }
-
-                while(indexAt(0, bottomY) == -1)
-                {
-                    bottomPixels++
-                    bottomY++
-
-                    if(bottomPixels > 1000)
-                        break;
-                }
-
-                if(topPixels > bottomPixels)
-                {
-                    setActive(indexAt(0, bottomY) + 1, false)
-                    positionViewAtIndex(indexAt(0, bottomY) + 1, ListView.Center)
-                }
-                else
-                {
-                    setActive(indexAt(0, topY) + 1, false)
-                    positionViewAtIndex(indexAt(0, topY) + 1, ListView.Center)
-                }
-            }
-            else
-            {
-                setActive(indexAt(0, contentY + 25) + 1, false)
-                positionViewAtIndex(indexAt(0, contentY + 25) + 1, ListView.Center)
-            }
+            var pos = contentY
+            setActive(indexAt(0, contentY + root.height / 2), false)
+            positionViewAtIndex(indexAt(0, contentY + root.height / 2), ListView.Center)
+            var destPos
+            destPos = contentY;
+            anim.from = pos;
+            anim.to = destPos;
+            anim.running = true;
         }
-
         onDragEnded: {
-            if(indexAt(0, contentY + 25) == -1)
-            {
-                var topPixels = 0
-                var bottomPixels = 0
-                var topY = contentY + 25
-                var bottomY = contentY + 25
-
-                while(indexAt(0, topY) == -1)
-                {
-                    topPixels++
-                    topY--
-
-                    if(topPixels > 1000)
-                        break;
-                }
-
-                while(indexAt(0, bottomY) == -1)
-                {
-                    bottomPixels++
-                    bottomY++
-
-                    if(bottomPixels > 1000)
-                        break;
-                }
-
-                if(topPixels > bottomPixels)
-                {
-                    setActive(indexAt(0, bottomY) + 1, false)
-                    positionViewAtIndex(indexAt(0, bottomY) + 1, ListView.Center)
-                }
-                else
-                {
-                    setActive(indexAt(0, topY) + 1, false)
-                    positionViewAtIndex(indexAt(0, topY) + 1, ListView.Center)
-                }
-            }
-            else
-            {
-                setActive(indexAt(0, contentY + 25) + 1, false)
-                positionViewAtIndex(indexAt(0, contentY + 25) + 1, ListView.Center)
-            }
+            var pos = contentY
+            setActive(indexAt(0, contentY + root.height / 2), false)
+            positionViewAtIndex(indexAt(0, contentY + root.height / 2), ListView.Center)
+            var destPos
+            destPos = contentY;
+            anim.from = pos;
+            anim.to = destPos;
+            anim.running = true;
         }
     }
+
+    NumberAnimation { id: anim; target: tumblerMain; property: "contentY"; duration: 100}
 }
